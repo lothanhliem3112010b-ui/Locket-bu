@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mini Locket</title>
+
+<style>
+
+body{
+margin:0;
+font-family:Arial, sans-serif;
+background:#111;
+color:white;
+text-align:center;
+}
+
+header{
+padding:15px;
+font-size:22px;
+font-weight:bold;
+}
+
+#camera{
+width:92%;
+max-width:360px;
+border-radius:20px;
+margin-top:10px;
+}
+
+button{
+margin:6px;
+padding:12px 18px;
+border:none;
+border-radius:20px;
+font-size:16px;
+background:#ffcc00;
+cursor:pointer;
+}
+
+#feed{
+margin-top:20px;
+display:flex;
+flex-wrap:wrap;
+justify-content:center;
+gap:10px;
+padding-bottom:40px;
+}
+
+#feed img{
+width:160px;
+border-radius:18px;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>Mini Locket 📸</header>
+
+<video id="camera" autoplay playsinline></video>
+
+<br>
+
+<button id="switchBtn">Đổi camera</button>
+<button id="snapBtn">Chụp ảnh</button>
+
+<canvas id="canvas" style="display:none;"></canvas>
+
+<div id="feed"></div>
+
+<script>
+
+const video = document.getElementById("camera");
+const canvas = document.getElementById("canvas");
+const feed = document.getElementById("feed");
+const switchBtn = document.getElementById("switchBtn");
+const snapBtn = document.getElementById("snapBtn");
+
+let currentStream = null;
+let facingMode = "user";
+
+async function startCamera(){
+
+try{
+
+if(currentStream){
+currentStream.getTracks().forEach(track=>track.stop());
+}
+
+const stream = await navigator.mediaDevices.getUserMedia({
+video:{facingMode:facingMode},
+audio:false
+});
+
+video.srcObject = stream;
+currentStream = stream;
+
+}catch(err){
+alert("Không mở được camera: " + err);
+}
+
+}
+
+function switchCamera(){
+
+facingMode = facingMode === "user" ? "environment" : "user";
+startCamera();
+
+}
+
+function takePhoto(){
+
+canvas.width = video.videoWidth;
+canvas.height = video.videoHeight;
+
+const ctx = canvas.getContext("2d");
+ctx.drawImage(video,0,0);
+
+const imageData = canvas.toDataURL("image/png");
+
+addPhoto(imageData);
+savePhoto(imageData);
+
+}
+
+function addPhoto(data){
+
+const img = document.createElement("img");
+img.src = data;
+feed.prepend(img);
+
+}
+
+function savePhoto(data){
+
+let photos = JSON.parse(localStorage.getItem("photos") || "[]");
+photos.unshift(data);
+localStorage.setItem("photos",JSON.stringify(photos));
+
+}
+
+function loadPhotos(){
+
+let photos = JSON.parse(localStorage.getItem("photos") || "[]");
+
+photos.forEach(p=>{
+addPhoto(p);
+});
+
+}
+
+switchBtn.onclick = switchCamera;
+snapBtn.onclick = takePhoto;
+
+startCamera();
+loadPhotos();
+
+</script>
+
+</body>
+</html>
